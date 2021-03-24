@@ -11,14 +11,27 @@ namespace _1150.RestaurantRater.Controllers
     {
         private RestaurantDBContext _context = new RestaurantDBContext();
         
-        public ActionResult Index()
+        public ActionResult Index() =>          View(_context.Restaurants.ToList());
+        public ActionResult Create() =>         View();
+        public ActionResult Delete(int? id) =>  ValidateIdInput(id);
+        public ActionResult Edit(int? id) =>    ValidateIdInput(id);
+        public ActionResult Details(int? id) => ValidateIdInput(id);
+
+        private ActionResult ValidateIdInput(int? id)
         {
-            return View(_context.Restaurants.ToList());
+            if (id == null) return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
+
+            Restaurant restaurant = _context.Restaurants.Find(id);
+
+            if (restaurant == null) return HttpNotFound();
+
+            return View(restaurant);
         }
 
-        public ActionResult Create()
+        private ActionResult SaveAndRedirect()
         {
-            return View();
+            _context.SaveChanges();
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
@@ -28,21 +41,8 @@ namespace _1150.RestaurantRater.Controllers
             if (ModelState.IsValid)
             {
                 _context.Restaurants.Add(restaurant);
-                _context.SaveChanges();
-                return RedirectToAction("Index");
+                return SaveAndRedirect();
             }
-            return View(restaurant);
-        }
-
-        //[HttpDelete] This attribute doesn't work for this method?
-        public ActionResult Delete(int? id)
-        {
-            if (id == null) return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
-
-            Restaurant restaurant = _context.Restaurants.Find(id);
-            
-            if (restaurant == null) return HttpNotFound();
-
             return View(restaurant);
         }
 
@@ -52,19 +52,7 @@ namespace _1150.RestaurantRater.Controllers
         {
             Restaurant restaurant = _context.Restaurants.Find(id);
             _context.Restaurants.Remove(restaurant);
-            _context.SaveChanges();
-            return RedirectToAction("Index");
-        }
-
-        public ActionResult Edit(int? id)
-        {
-            if (id == null) return new HttpStatusCodeResult(System.Net.HttpStatusCode.BadRequest);
-
-            Restaurant restaurant = _context.Restaurants.Find(id);
-
-            if (restaurant == null) return HttpNotFound();
-
-            return View(restaurant);
+            return SaveAndRedirect();
         }
 
         [HttpPost, ActionName("Edit")]
@@ -74,8 +62,7 @@ namespace _1150.RestaurantRater.Controllers
             if (ModelState.IsValid)
             {
                 _context.Entry(restaurant).State = System.Data.Entity.EntityState.Modified;
-                _context.SaveChanges();
-                return RedirectToAction("Index");
+                return SaveAndRedirect();
             }
             return View(restaurant);
         }
